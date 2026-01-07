@@ -147,18 +147,27 @@ def open_exams(exam_ids: list, keep_open_minutes: int = 30) -> dict:
                     btn = exam_page.locator('button:has-text("搜索")')
                     if btn.count() > 0:
                         btn.first.click()
-                    time.sleep(2)
 
-                    # Double-click row to open detail
-                    row = exam_page.locator(f'tr:has-text("{exam_id}")')
-                    if row.count() > 0:
+                    # Wait for search results with retry
+                    row = None
+                    for attempt in range(5):  # Try up to 5 times (5 seconds total)
+                        time.sleep(1)
+                        row = exam_page.locator(f'tr:has-text("{exam_id}")')
+                        if row.count() > 0:
+                            break
+
+                    # Save screenshot if row not found for debugging
+                    if row is None or row.count() == 0:
+                        screenshot_path = screenshot_dir / f"search_fail_{exam_id}.png"
+                        exam_page.screenshot(path=str(screenshot_path))
+                        print(f"✗ Row not found (screenshot: {screenshot_path})")
+                        results['failed'].append(exam_id)
+                    else:
+                        # Double-click row to open detail
                         row.first.dblclick()
                         time.sleep(1.5)
                         print("✓ Opened")
                         results['success'].append(exam_id)
-                    else:
-                        print("✗ Row not found")
-                        results['failed'].append(exam_id)
                 else:
                     print("✗ Search input not found")
                     results['failed'].append(exam_id)
