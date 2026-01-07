@@ -128,14 +128,22 @@ def open_exams(exam_ids: list, keep_open_minutes: int = 30) -> dict:
         print(f"\n[4/4] Opening {len(exam_ids)} exams...")
 
         for i, exam_id in enumerate(exam_ids, 1):
-            print(f"\n  [{i}/{len(exam_ids)}] Exam {exam_id}...", end=" ")
+            print(f"\n  [{i}/{len(exam_ids)}] Exam {exam_id}...", end=" ", flush=True)
 
             try:
-                # Find the EXAM ID search field specifically
-                search = exam_page.locator('input[placeholder*="检查ID"]')
+                # Save debug screenshot on first exam
+                if i == 1:
+                    debug_path = screenshot_dir / "exam_page_debug.png"
+                    exam_page.screenshot(path=str(debug_path))
+                    print(f"(debug: {debug_path})", end=" ", flush=True)
+
+                # Find the EXAM ID search field - try multiple selectors
+                search = exam_page.locator('input[placeholder*="检查"]')
                 if search.count() == 0:
-                    # Fallback to second input field
-                    search = exam_page.locator('input').nth(1)
+                    search = exam_page.locator('input[placeholder*="ID"]')
+                if search.count() == 0:
+                    # Fallback: find input near the 检查 label
+                    search = exam_page.locator('input.el-input__inner').nth(1)
 
                 if search.count() > 0:
                     # Clear and fill
