@@ -71,17 +71,36 @@ def open_exams(exam_ids: list, keep_open_minutes: int = 30) -> dict:
         # Click login button (NOT press Enter - doesn't work on this site)
         page.locator('button.el-button--primary').first.click()
 
-        # Wait for login
-        print("  Waiting for login...")
-        for i in range(30):  # 2.5 minutes max
+        # Wait for login - check URL and save screenshots for monitoring
+        print("  Waiting for login...", flush=True)
+        screenshot_dir = Path(__file__).parent / "screenshots"
+        screenshot_dir.mkdir(exist_ok=True)
+
+        logged_in = False
+        for i in range(60):  # 5 minutes max
             time.sleep(5)
-            if '#/login' not in page.url:
-                print("  ✓ Logged in!")
+            current_url = page.url
+
+            # Save screenshot every check for monitoring
+            screenshot_path = screenshot_dir / f"login_status.png"
+            page.screenshot(path=str(screenshot_path))
+            print(f"  📸 Screenshot: {screenshot_path} | URL: {current_url}", flush=True)
+
+            # Check for successful login indicators
+            if '#/dashboard' in current_url or '#/image' in current_url or ('#/login' not in current_url and 'conovamed' in current_url):
+                print(f"  ✓ Logged in! URL: {current_url}", flush=True)
+                logged_in = True
                 break
-        else:
-            print("  ⚠ Login taking long - complete CAPTCHA if shown")
-            while '#/login' in page.url:
+
+        if not logged_in:
+            print("  ⚠ Login timeout - please complete login manually", flush=True)
+            # Keep waiting indefinitely
+            while True:
                 time.sleep(5)
+                current_url = page.url
+                if '#/dashboard' in current_url or '#/image' in current_url or '#/login' not in current_url:
+                    print(f"  ✓ Logged in! URL: {current_url}", flush=True)
+                    break
 
         time.sleep(3)
 
