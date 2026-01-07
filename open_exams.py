@@ -148,6 +148,15 @@ def open_exams(exam_ids: list, keep_open_minutes: int = 30) -> dict:
                     if btn.count() > 0:
                         btn.first.click()
 
+                    # Wait for loading spinner to disappear (search complete)
+                    time.sleep(0.5)  # Brief wait for spinner to appear
+                    for _ in range(15):  # Wait up to 15 seconds for loading
+                        spinner = exam_page.locator('.el-loading-mask')
+                        if spinner.count() == 0 or not spinner.first.is_visible():
+                            break
+                        time.sleep(1)
+                    time.sleep(0.5)  # Extra buffer after loading completes
+
                     # Wait for search results with retry
                     row = None
                     for attempt in range(5):  # Try up to 5 times (5 seconds total)
