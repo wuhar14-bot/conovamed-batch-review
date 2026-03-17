@@ -111,31 +111,19 @@ def open_image_management(page, context):
 
     # 设检查类型 = 脊柱X光全长
     try:
-        clicked = exam_tab.evaluate("""
-            () => {
-                const labels = document.querySelectorAll('.el-form-item__label');
-                for (const label of labels) {
-                    if (label.textContent.trim() === '检查类型:') {
-                        const inp = label.closest('.el-form-item')
-                                        .querySelector('.el-select .el-input__inner');
-                        if (inp) { inp.click(); return true; }
-                    }
-                }
-                return false;
-            }
-        """)
-        if clicked:
-            time.sleep(0.8)
-            opt = exam_tab.query_selector('li.el-select-dropdown__item:has-text("脊柱X光全长")')
-            if opt and opt.is_visible():
-                opt.click()
-                time.sleep(0.5)
-                print("  ✓ 检查类型已设为: 脊柱X光全长")
-            else:
-                exam_tab.keyboard.press('Escape')
-                print("  ⚠ 未找到脊柱X光全长选项")
+        sel = exam_tab.locator('text=检查类型').locator('..').locator('.el-select .el-input__inner')
+        if sel.count() == 0:
+            sel = exam_tab.locator('.el-select .el-input__inner').nth(0)
+        sel.first.click()
+        time.sleep(0.8)
+        opt = exam_tab.locator('li.el-select-dropdown__item', has_text='脊柱X光全长').first
+        if opt.is_visible():
+            opt.click()
+            time.sleep(0.5)
+            print("  ✓ 检查类型已设为: 脊柱X光全长")
         else:
-            print("  ⚠ 未找到检查类型下拉框")
+            exam_tab.keyboard.press('Escape')
+            print("  ⚠ 未找到脊柱X光全长选项")
     except Exception as e:
         print(f"  ⚠ 设检查类型异常: {e}")
 
@@ -164,7 +152,7 @@ def search_patient(img_tab, name):
         print(f"    ✗ 未找到搜索框")
         return False
 
-    search_input.triple_click()
+    search_input.click()
     time.sleep(0.2)
     search_input.fill(name)
     time.sleep(0.3)
@@ -201,7 +189,7 @@ def open_patient(img_tab, context, name, note):
             rows = img_tab.query_selector_all('.el-table__body tr.el-table__row')
             if i >= len(rows):
                 break
-            btns = rows[i].query_selector_all('button')
+            btns = [b for b in rows[i].query_selector_all('svg.btn-item-icon') if b.is_visible()]
             if btns:
                 btns[0].click()
                 time.sleep(1.5)
@@ -272,7 +260,10 @@ def main():
         print(f"  补录完成后按 Enter 关闭浏览器")
         print("=" * 60)
 
-        input()
+        try:
+            input()
+        except EOFError:
+            time.sleep(30)
         browser.close()
 
 
